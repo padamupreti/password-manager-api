@@ -46,3 +46,11 @@ After setting the environment variables, run the following from project root to 
 ```
 uvicorn app.main:app
 ```
+
+## Test Usage
+
+The `/docs` endpoint provides a simple breakdown of all routes based on project code itself.
+The API can be understood and interacted with using this interface. After creating a user, the `Authorize`
+button can be used for logging in and accessing all protected routes from this interface.
+
+![Screenshot](https://i.imgur.com/uexmNAS.png)
