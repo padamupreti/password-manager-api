@@ -1,5 +1,4 @@
 anyio
-autopep8
 bcrypt
 cffi
 click
