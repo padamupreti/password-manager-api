@@ -15,7 +15,7 @@ pip install -r requirements.txt
 ```
 
 This project uses a [PostgreSQL](https://www.postgresql.org/) database. Json Web Tokens are used for
-authentication and user info is encrypted. Here is a sample `.env` file to be created at projet root for the
+authentication and user info is encrypted. Here is a sample `.env` file to be created at project root for the
 application to work:
 
 ```
