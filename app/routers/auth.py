@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from .. import schemas, models
 from ..database import get_db
-from ..utils import crypt_context
+from ..hashutils import crypt_context
 from ..oauth2 import create_access_token
 
 router = APIRouter(
