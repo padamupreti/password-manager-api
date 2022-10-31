@@ -2,29 +2,16 @@ from typing import List
 
 from fastapi import APIRouter, status, Depends, HTTPException
 from sqlalchemy.orm import Session
-from cryptography.fernet import Fernet
 
 from .. import schemas, models
 from ..database import get_db
 from ..oauth2 import get_current_user
-from ..config import settings
+from ..pwutils import encrypt, decrypt
 
 router = APIRouter(
     tags=['Passwords'],
     prefix='/passwords'
 )
-
-cipher = Fernet(settings.pw_encryption_key)
-
-
-def encrypt(cipher: Fernet, secret: str):
-    encrypted = cipher.encrypt(secret.encode()).decode()
-    return encrypted
-
-
-def decrypt(cipher: Fernet, secret: str):
-    decrypted = cipher.decrypt(secret.encode()).decode()
-    return decrypted
 
 
 @router.post('', status_code=status.HTTP_201_CREATED, response_model=schemas.PasswordResponse)
@@ -33,14 +20,14 @@ async def create_password(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(get_current_user)
 ):
-    entry_schema.login = encrypt(cipher, entry_schema.login)
-    entry_schema.password = encrypt(cipher, entry_schema.password)
+    entry_schema.login = encrypt(entry_schema.login)
+    entry_schema.password = encrypt(entry_schema.password)
     new_entry = models.Password(user_id=current_user.id, **entry_schema.dict())
     db.add(new_entry)
     db.commit()
     db.refresh(new_entry)
-    new_entry.login = decrypt(cipher, new_entry.login)
-    new_entry.password = decrypt(cipher, new_entry.password)
+    new_entry.login = decrypt(new_entry.login)
+    new_entry.password = decrypt(new_entry.password)
     return new_entry
 
 
@@ -55,8 +42,8 @@ async def get_passwords(
         raise HTTPException(status.HTTP_404_NOT_FOUND,
                             detail='No password entries yet')
     for entry in entries_on_db:
-        entry.login = decrypt(cipher, entry.login)
-        entry.password = decrypt(cipher, entry.password)
+        entry.login = decrypt(entry.login)
+        entry.password = decrypt(entry.password)
     return entries_on_db
 
 
@@ -76,12 +63,12 @@ async def update_password(
     if password_on_db.user_id != current_user.id:
         raise HTTPException(status.HTTP_403_FORBIDDEN,
                             detail='Not authorized to perform requested action')
-    entry_schema.login = encrypt(cipher, entry_schema.login)
-    entry_schema.password = encrypt(cipher, entry_schema.password)
+    entry_schema.login = encrypt(entry_schema.login)
+    entry_schema.password = encrypt(entry_schema.password)
     passwords_query.update(entry_schema.dict(), synchronize_session=False)
     db.commit()
-    password_on_db.login = decrypt(cipher, password_on_db.login)
-    password_on_db.password = decrypt(cipher, password_on_db.password)
+    password_on_db.login = decrypt(password_on_db.login)
+    password_on_db.password = decrypt(password_on_db.password)
     return password_on_db
 
 
