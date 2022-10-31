@@ -1,4 +1,4 @@
-from io import StringIO
+from tempfile import NamedTemporaryFile
 from csv import DictReader
 
 from fastapi import APIRouter, UploadFile, status, Depends, HTTPException
@@ -25,15 +25,24 @@ async def import_csv(
         status.HTTP_400_BAD_REQUEST, detail='Invalid password import')
     if upload_file.filename.endswith('.csv') == False:
         raise improper_import_exception
-    contents = await upload_file.read()
-    file_obj = StringIO(contents.decode())
-    csv_reader = DictReader(file_obj)
-    if csv_reader.fieldnames != ['title', 'url', 'login', 'password']:
-        raise improper_import_exception
-    for row in csv_reader:
-        row['login'] = encrypt(row['login'])
-        row['password'] = encrypt(row['password'])
-        new_entry = models.Password(user_id=current_user.id, **row)
-        db.add(new_entry)
+    real_file_size = 0
+    temp = NamedTemporaryFile(delete=False)
+    for chunk in upload_file.file:
+        real_file_size += len(chunk)
+        if real_file_size > 20_000:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="Import too large"
+            )
+        temp.write(chunk)
+    temp.close()
+    with open(temp.name, 'r') as f:
+        csv_reader = DictReader(f)
+        if csv_reader.fieldnames != ['title', 'url', 'login', 'password']:
+            raise improper_import_exception
+        for row in csv_reader:
+            row['login'] = encrypt(row['login'])
+            row['password'] = encrypt(row['password'])
+            new_entry = models.Password(user_id=current_user.id, **row)
+            db.add(new_entry)
     db.commit()
     return {'detail': 'Successfully imported passwords'}
