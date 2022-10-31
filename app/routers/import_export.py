@@ -4,7 +4,7 @@ from csv import DictReader
 from fastapi import APIRouter, UploadFile, status, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from .. import schemas, models
+from .. import models
 from ..database import get_db
 from ..oauth2 import get_current_user
 from ..pwutils import encrypt, decrypt
