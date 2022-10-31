@@ -2,6 +2,7 @@ from tempfile import NamedTemporaryFile
 from csv import DictReader
 
 from fastapi import APIRouter, UploadFile, status, Depends, HTTPException
+from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from .. import models
@@ -46,3 +47,24 @@ async def import_csv(
             db.add(new_entry)
     db.commit()
     return {'detail': 'Successfully imported passwords'}
+
+
+@router.get('', response_class=FileResponse)
+async def export_csv(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    entries_on_db = db.query(models.Password).filter(
+        models.Password.user_id == current_user.id).all()
+    if len(entries_on_db) == 0:
+        raise HTTPException(status.HTTP_404_NOT_FOUND,
+                            detail='No password entries yet')
+    temp = NamedTemporaryFile(delete=False)
+    temp.write('title,url,login,password\n'.encode())
+    for entry in entries_on_db:
+        entry.login = decrypt(entry.login)
+        entry.password = decrypt(entry.password)
+        entry_string = f'{entry.title},{entry.url},{entry.login},{entry.password}\n'
+        temp.write(entry_string.encode())
+    temp.close()
+    return FileResponse(temp.name, filename=f'{current_user.username}_passwords.csv')
