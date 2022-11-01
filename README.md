@@ -53,4 +53,4 @@ The `/docs` endpoint provides a simple breakdown of all routes based on project 
 The API can be understood and interacted with using this interface. After creating a user, the `Authorize`
 button can be used for logging in and accessing all protected routes from this interface.
 
-![Screenshot](https://i.imgur.com/uexmNAS.png)
+![Screenshot](https://i.imgur.com/0Awdb25.png)
